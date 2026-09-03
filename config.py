@@ -20,5 +20,4 @@ if not ADMIN_ID:
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY topilmadi!")
 
-# Telegram ID raqamga aylantiriladi
-ADMIN_ID = int(ADMIN_ID)
+ADMIN_ID = int(ADMIN_ID.strip())
