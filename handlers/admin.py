@@ -22,10 +22,18 @@ class AddMovie(StatesGroup):
     video = State()
 
 
+def is_admin(message: Message) -> bool:
+    return message.from_user.id == ADMIN_ID
+
+
+# =========================
+# ADMIN PANEL
+# =========================
+
 @router.message(Command("admin"))
 async def admin_panel(message: Message, state: FSMContext):
 
-    if message.from_user.id != ADMIN_ID:
+    if not is_admin(message):
         await message.answer("❌ Siz admin emassiz.")
         return
 
@@ -39,17 +47,21 @@ async def admin_panel(message: Message, state: FSMContext):
     )
 
 
+# =========================
+# KINO QO'SHISH
+# =========================
+
 @router.message(F.text == "➕ Kino qo'shish")
 async def add_movie_start(message: Message, state: FSMContext):
 
-    if message.from_user.id != ADMIN_ID:
+    if not is_admin(message):
         return
 
     await state.set_state(AddMovie.code)
 
     await message.answer(
         "➕ <b>Yangi kino qo‘shish</b>\n\n"
-        "🔢 Kino kodini yuboring:\n\n"
+        "Kino kodini yuboring.\n"
         "Masalan: <code>125</code>",
         parse_mode="HTML"
     )
@@ -62,8 +74,7 @@ async def movie_code(message: Message, state: FSMContext):
         await message.answer("❌ Kod faqat raqamlardan iborat bo‘lsin.")
         return
 
-    await state.update_data(code=message.text)
-
+    await state.update_data(code=int(message.text))
     await state.set_state(AddMovie.title)
 
     await message.answer("🎬 Kino nomini yuboring:")
@@ -73,11 +84,10 @@ async def movie_code(message: Message, state: FSMContext):
 async def movie_title(message: Message, state: FSMContext):
 
     await state.update_data(title=message.text)
-
     await state.set_state(AddMovie.genre)
 
     await message.answer(
-        "🎭 Kino janrini yuboring:\n\n"
+        "🎭 Kino janrini yuboring.\n\n"
         "Masalan: Jangari, Komediya"
     )
 
@@ -86,11 +96,10 @@ async def movie_title(message: Message, state: FSMContext):
 async def movie_genre(message: Message, state: FSMContext):
 
     await state.update_data(genre=message.text)
-
     await state.set_state(AddMovie.year)
 
     await message.answer(
-        "📅 Kino yilini yuboring:\n\n"
+        "📅 Kino yilini yuboring.\n\n"
         "Masalan: 2026"
     )
 
@@ -103,11 +112,10 @@ async def movie_year(message: Message, state: FSMContext):
         return
 
     await state.update_data(year=int(message.text))
-
     await state.set_state(AddMovie.rating)
 
     await message.answer(
-        "⭐ Kino reytingini yuboring:\n\n"
+        "⭐ Kino reytingini yuboring.\n\n"
         "Masalan: 8.5"
     )
 
@@ -118,31 +126,28 @@ async def movie_rating(message: Message, state: FSMContext):
     try:
         rating = float(message.text)
     except (ValueError, TypeError):
-        await message.answer(
-            "❌ Reyting noto‘g‘ri.\n"
-            "Masalan: 8.5"
-        )
+        await message.answer("❌ Reytingni raqam bilan kiriting. Masalan: 8.5")
+        return
+
+    if rating < 0 or rating > 10:
+        await message.answer("❌ Reyting 0 dan 10 gacha bo‘lishi kerak.")
         return
 
     await state.update_data(rating=rating)
-
     await state.set_state(AddMovie.description)
 
-    await message.answer(
-        "📝 Kino haqida qisqa tavsif yuboring:"
-    )
+    await message.answer("📝 Kino haqida qisqa tavsif yuboring:")
 
 
 @router.message(AddMovie.description)
 async def movie_description(message: Message, state: FSMContext):
 
     await state.update_data(description=message.text)
-
     await state.set_state(AddMovie.video)
 
     await message.answer(
         "🎥 Endi kino videosini yuboring.\n\n"
-        "Video sifatida yuborishingiz mumkin."
+        "Videoni Telegram orqali yuboring."
     )
 
 
@@ -151,11 +156,7 @@ async def movie_video(message: Message, state: FSMContext):
 
     data = await state.get_data()
 
-    await state.update_data(
-        file_id=message.video.file_id
-    )
-
-    data = await state.get_data()
+    file_id = message.video.file_id
 
     try:
         await add_movie(
@@ -165,7 +166,20 @@ async def movie_video(message: Message, state: FSMContext):
             genre=data["genre"],
             year=data["year"],
             rating=data["rating"],
-            file_id=data["file_id"]
+            file_id=file_id
+        )
+
+        await message.answer(
+            "✅ <b>KINO SAQLANDI!</b>\n\n"
+            f"🎬 <b>{data['title']}</b>\n"
+            f"🔢 Kod: <code>{data['code']}</code>\n"
+            f"🎭 Janr: {data['genre']}\n"
+            f"📅 Yil: {data['year']}\n"
+            f"⭐ Reyting: {data['rating']}\n\n"
+            "🎉 Foydalanuvchilar endi kino kodini yuborib "
+            "kinoni olishlari mumkin.",
+            reply_markup=admin_menu(),
+            parse_mode="HTML"
         )
 
     except Exception as e:
@@ -174,24 +188,10 @@ async def movie_video(message: Message, state: FSMContext):
 
         await message.answer(
             "❌ Kino saqlashda xatolik yuz berdi.\n\n"
-            "Kod allaqachon mavjud bo‘lishi mumkin."
+            f"Xato: <code>{e}</code>",
+            reply_markup=admin_menu(),
+            parse_mode="HTML"
         )
-
-        await state.clear()
-        return
-
-    await message.answer(
-        "✅ <b>KINO SAQLANDI!</b>\n\n"
-        f"🎬 <b>{data['title']}</b>\n"
-        f"🔢 Kod: <code>{data['code']}</code>\n"
-        f"🎭 Janr: {data['genre']}\n"
-        f"📅 Yil: {data['year']}\n"
-        f"⭐ Reyting: {data['rating']}\n\n"
-        "🍿 Endi foydalanuvchilar kino kodini yuborib "
-        "kinoni olishlari mumkin.",
-        reply_markup=admin_menu(),
-        parse_mode="HTML"
-    )
 
     await state.clear()
 
@@ -205,14 +205,18 @@ async def wrong_video(message: Message):
     )
 
 
+# =========================
+# STATISTIKA
+# =========================
+
 @router.message(F.text == "📊 Statistika")
 async def statistics(message: Message):
 
-    if message.from_user.id != ADMIN_ID:
+    if not is_admin(message):
         return
 
     await message.answer(
         "📊 <b>DONIMEDIA STATISTIKA</b>\n\n"
-        "Bu bo‘limni keyingi bosqichda to‘liq qilamiz.",
+        "Statistika bo‘limi ishlamoqda.",
         parse_mode="HTML"
     )
