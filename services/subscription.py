@@ -6,7 +6,6 @@ async def check_subscription(bot: Bot, user_id: int) -> bool:
     try:
         chat_id = CHANNEL_ID.strip()
 
-        # Agar ID raqam bo'lsa, integerga o'tkazamiz
         if chat_id.lstrip("-").isdigit():
             chat_id = int(chat_id)
 
