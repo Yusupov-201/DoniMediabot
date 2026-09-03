@@ -12,6 +12,18 @@ from keyboards.admin import admin_menu
 router = Router()
 
 
+# =========================
+# ADMIN TEKSHIRISH
+# =========================
+
+def is_admin(user_id: int) -> bool:
+    return int(user_id) == int(ADMIN_ID)
+
+
+# =========================
+# KINO QO'SHISH HOLATLARI
+# =========================
+
 class AddMovie(StatesGroup):
     code = State()
     title = State()
@@ -22,18 +34,14 @@ class AddMovie(StatesGroup):
     video = State()
 
 
-def is_admin(message: Message) -> bool:
-    return message.from_user.id == ADMIN_ID
-
-
 # =========================
-# ADMIN PANEL
+# /ADMIN
 # =========================
 
 @router.message(Command("admin"))
 async def admin_panel(message: Message, state: FSMContext):
 
-    if not is_admin(message):
+    if not is_admin(message.from_user.id):
         await message.answer("❌ Siz admin emassiz.")
         return
 
@@ -48,117 +56,254 @@ async def admin_panel(message: Message, state: FSMContext):
 
 
 # =========================
-# KINO QO'SHISH
+# KINO QO'SHISHNI BOSHLASH
 # =========================
 
 @router.message(F.text == "➕ Kino qo'shish")
-async def add_movie_start(message: Message, state: FSMContext):
+async def add_movie_start(
+    message: Message,
+    state: FSMContext
+):
 
-    if not is_admin(message):
+    if not is_admin(message.from_user.id):
+        await message.answer("❌ Siz admin emassiz.")
         return
 
+    await state.clear()
     await state.set_state(AddMovie.code)
 
     await message.answer(
         "➕ <b>Yangi kino qo‘shish</b>\n\n"
-        "Kino kodini yuboring.\n"
-        "Masalan: <code>125</code>",
+        "🔢 Kino kodini yuboring.\n\n"
+        "Masalan:\n"
+        "<code>125</code>",
         parse_mode="HTML"
     )
 
 
-@router.message(AddMovie.code)
-async def movie_code(message: Message, state: FSMContext):
+# =========================
+# KINO KODI
+# =========================
 
-    if not message.text or not message.text.isdigit():
-        await message.answer("❌ Kod faqat raqamlardan iborat bo‘lsin.")
+@router.message(AddMovie.code)
+async def movie_code(
+    message: Message,
+    state: FSMContext
+):
+
+    if not is_admin(message.from_user.id):
         return
 
-    await state.update_data(code=int(message.text))
+    if not message.text or not message.text.strip().isdigit():
+        await message.answer(
+            "❌ Kino kodi faqat raqamlardan iborat bo‘lishi kerak.\n\n"
+            "Masalan: <code>125</code>",
+            parse_mode="HTML"
+        )
+        return
+
+    code = message.text.strip()
+
+    await state.update_data(code=int(code))
     await state.set_state(AddMovie.title)
 
-    await message.answer("🎬 Kino nomini yuboring:")
+    await message.answer(
+        "🎬 Kino nomini yuboring."
+    )
 
+
+# =========================
+# KINO NOMI
+# =========================
 
 @router.message(AddMovie.title)
-async def movie_title(message: Message, state: FSMContext):
+async def movie_title(
+    message: Message,
+    state: FSMContext
+):
 
-    await state.update_data(title=message.text)
+    if not is_admin(message.from_user.id):
+        return
+
+    if not message.text or not message.text.strip():
+        await message.answer("❌ Kino nomini yuboring.")
+        return
+
+    await state.update_data(
+        title=message.text.strip()
+    )
+
     await state.set_state(AddMovie.genre)
 
     await message.answer(
         "🎭 Kino janrini yuboring.\n\n"
-        "Masalan: Jangari, Komediya"
+        "Masalan: Komediya, Jangari, Drama"
     )
 
 
-@router.message(AddMovie.genre)
-async def movie_genre(message: Message, state: FSMContext):
+# =========================
+# JANR
+# =========================
 
-    await state.update_data(genre=message.text)
+@router.message(AddMovie.genre)
+async def movie_genre(
+    message: Message,
+    state: FSMContext
+):
+
+    if not is_admin(message.from_user.id):
+        return
+
+    if not message.text or not message.text.strip():
+        await message.answer("❌ Kino janrini yuboring.")
+        return
+
+    await state.update_data(
+        genre=message.text.strip()
+    )
+
     await state.set_state(AddMovie.year)
 
     await message.answer(
         "📅 Kino yilini yuboring.\n\n"
-        "Masalan: 2026"
+        "Masalan: <code>2026</code>",
+        parse_mode="HTML"
     )
 
 
-@router.message(AddMovie.year)
-async def movie_year(message: Message, state: FSMContext):
+# =========================
+# YIL
+# =========================
 
-    if not message.text or not message.text.isdigit():
-        await message.answer("❌ Yilni raqam bilan kiriting.")
+@router.message(AddMovie.year)
+async def movie_year(
+    message: Message,
+    state: FSMContext
+):
+
+    if not is_admin(message.from_user.id):
         return
 
-    await state.update_data(year=int(message.text))
+    if not message.text or not message.text.strip().isdigit():
+        await message.answer(
+            "❌ Yil faqat raqamlardan iborat bo‘lishi kerak.\n\n"
+            "Masalan: <code>2026</code>",
+            parse_mode="HTML"
+        )
+        return
+
+    year = int(message.text.strip())
+
+    await state.update_data(year=year)
     await state.set_state(AddMovie.rating)
 
     await message.answer(
         "⭐ Kino reytingini yuboring.\n\n"
-        "Masalan: 8.5"
+        "Masalan: <code>8.5</code>",
+        parse_mode="HTML"
     )
 
 
+# =========================
+# REYTING
+# =========================
+
 @router.message(AddMovie.rating)
-async def movie_rating(message: Message, state: FSMContext):
+async def movie_rating(
+    message: Message,
+    state: FSMContext
+):
+
+    if not is_admin(message.from_user.id):
+        return
+
+    if not message.text:
+        await message.answer(
+            "❌ Reytingni yuboring.\n"
+            "Masalan: 8.5"
+        )
+        return
 
     try:
-        rating = float(message.text)
-    except (ValueError, TypeError):
-        await message.answer("❌ Reytingni raqam bilan kiriting. Masalan: 8.5")
+        rating = float(
+            message.text.strip().replace(",", ".")
+        )
+    except ValueError:
+        await message.answer(
+            "❌ Reyting noto‘g‘ri.\n\n"
+            "Masalan: <code>8.5</code>",
+            parse_mode="HTML"
+        )
         return
 
     if rating < 0 or rating > 10:
-        await message.answer("❌ Reyting 0 dan 10 gacha bo‘lishi kerak.")
+        await message.answer(
+            "❌ Reyting 0 dan 10 gacha bo‘lishi kerak."
+        )
         return
 
-    await state.update_data(rating=rating)
+    await state.update_data(
+        rating=rating
+    )
+
     await state.set_state(AddMovie.description)
 
-    await message.answer("📝 Kino haqida qisqa tavsif yuboring:")
+    await message.answer(
+        "📝 Kino haqida qisqa tavsif yuboring."
+    )
 
+
+# =========================
+# TAVSIF
+# =========================
 
 @router.message(AddMovie.description)
-async def movie_description(message: Message, state: FSMContext):
+async def movie_description(
+    message: Message,
+    state: FSMContext
+):
 
-    await state.update_data(description=message.text)
+    if not is_admin(message.from_user.id):
+        return
+
+    if not message.text:
+        await message.answer(
+            "❌ Kino tavsifini yuboring."
+        )
+        return
+
+    await state.update_data(
+        description=message.text.strip()
+    )
+
     await state.set_state(AddMovie.video)
 
     await message.answer(
         "🎥 Endi kino videosini yuboring.\n\n"
-        "Videoni Telegram orqali yuboring."
+        "Videoni Telegram orqali <b>video</b> sifatida yuboring.",
+        parse_mode="HTML"
     )
 
 
+# =========================
+# VIDEO
+# =========================
+
 @router.message(AddMovie.video, F.video)
-async def movie_video(message: Message, state: FSMContext):
+async def movie_video(
+    message: Message,
+    state: FSMContext
+):
+
+    if not is_admin(message.from_user.id):
+        return
 
     data = await state.get_data()
 
     file_id = message.video.file_id
 
     try:
+
         await add_movie(
             code=data["code"],
             title=data["title"],
@@ -169,39 +314,71 @@ async def movie_video(message: Message, state: FSMContext):
             file_id=file_id
         )
 
-        await message.answer(
-            "✅ <b>KINO SAQLANDI!</b>\n\n"
-            f"🎬 <b>{data['title']}</b>\n"
-            f"🔢 Kod: <code>{data['code']}</code>\n"
-            f"🎭 Janr: {data['genre']}\n"
-            f"📅 Yil: {data['year']}\n"
-            f"⭐ Reyting: {data['rating']}\n\n"
-            "🎉 Foydalanuvchilar endi kino kodini yuborib "
-            "kinoni olishlari mumkin.",
-            reply_markup=admin_menu(),
-            parse_mode="HTML"
-        )
-
     except Exception as e:
 
         print(f"Kino saqlash xatosi: {e}")
 
         await message.answer(
-            "❌ Kino saqlashda xatolik yuz berdi.\n\n"
-            f"Xato: <code>{e}</code>",
-            reply_markup=admin_menu(),
+            "❌ <b>Kino saqlanmadi!</b>\n\n"
+            f"Xatolik: <code>{e}</code>",
             parse_mode="HTML"
         )
+
+        await state.clear()
+        return
+
+    await message.answer(
+        "✅ <b>KINO MUVAFFAQIYATLI SAQLANDI!</b>\n\n"
+        f"🎬 Nomi: <b>{data['title']}</b>\n"
+        f"🔢 Kod: <code>{data['code']}</code>\n"
+        f"🎭 Janr: {data['genre']}\n"
+        f"📅 Yil: {data['year']}\n"
+        f"⭐ Reyting: {data['rating']}\n\n"
+        "👥 Foydalanuvchilar kino kodini yuborib "
+        "kinoni olishlari mumkin.",
+        reply_markup=admin_menu(),
+        parse_mode="HTML"
+    )
 
     await state.clear()
 
 
+# =========================
+# VIDEO O'RNIGA BOSHQA NARSA
+# =========================
+
 @router.message(AddMovie.video)
-async def wrong_video(message: Message):
+async def wrong_video(
+    message: Message,
+    state: FSMContext
+):
+
+    if not is_admin(message.from_user.id):
+        return
 
     await message.answer(
-        "❌ Iltimos, kino faylini <b>video</b> ko‘rinishida yuboring.",
+        "❌ Iltimos, kinoni <b>video</b> sifatida yuboring.",
         parse_mode="HTML"
+    )
+
+
+# =========================
+# BOSH MENYU
+# =========================
+
+@router.message(F.text == "⬅️ Bosh menyu")
+async def admin_back(
+    message: Message,
+    state: FSMContext
+):
+
+    if not is_admin(message.from_user.id):
+        return
+
+    await state.clear()
+
+    await message.answer(
+        "🏠 Bosh menyuga qaytdingiz."
     )
 
 
@@ -210,13 +387,18 @@ async def wrong_video(message: Message):
 # =========================
 
 @router.message(F.text == "📊 Statistika")
-async def statistics(message: Message):
+async def statistics(
+    message: Message,
+    state: FSMContext
+):
 
-    if not is_admin(message):
+    if not is_admin(message.from_user.id):
         return
+
+    await state.clear()
 
     await message.answer(
         "📊 <b>DONIMEDIA STATISTIKA</b>\n\n"
-        "Statistika bo‘limi ishlamoqda.",
+        "Statistika funksiyasi mavjud.",
         parse_mode="HTML"
     )
