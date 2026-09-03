@@ -15,11 +15,20 @@ from keyboards.main import main_menu
 router = Router()
 
 
+# ==============================
+# MAJBURIY OBUNA TEKSHIRISH
+# ==============================
 async def check_subscription(bot, user_id: int) -> bool:
     try:
         member = await bot.get_chat_member(
             chat_id=CHANNEL_ID,
             user_id=user_id
+        )
+
+        print(
+            f"🔎 OBUNA: user={user_id} | "
+            f"channel={CHANNEL_ID} | "
+            f"status={member.status}"
         )
 
         return member.status in (
@@ -29,19 +38,21 @@ async def check_subscription(bot, user_id: int) -> bool:
         )
 
     except Exception as e:
-        print(f"Obuna tekshirish xatosi: {e}")
+        print(f"❌ Obuna tekshirish xatosi: {e}")
         return False
 
 
+# ==============================
+# OBUNA TUGMALARI
+# ==============================
 def subscription_keyboard():
-    channel_username = CHANNEL_ID.replace("@", "")
 
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text="📢 Kanalga obuna bo‘lish",
-                    url=f"https://t.me/{channel_username}"
+                    url="https://t.me/buroqli"
                 )
             ],
             [
@@ -54,6 +65,9 @@ def subscription_keyboard():
     )
 
 
+# ==============================
+# /START
+# ==============================
 @router.message(CommandStart())
 async def start_handler(message: Message, bot):
 
@@ -65,16 +79,19 @@ async def start_handler(message: Message, bot):
     )
 
     if not subscribed:
+
         await message.answer(
             "🎬 <b>DONIMEDIA</b>\n\n"
             "🍿 Kino olamiga xush kelibsiz!\n\n"
-            "🔐 Botdan foydalanish uchun "
-            "avval kanalimizga obuna bo‘ling.\n\n"
-            "👇 Obuna bo‘lgach, "
-            "<b>«Obunani tekshirish»</b> tugmasini bosing.",
+            "🔐 Botdan foydalanish uchun avval "
+            "kanalimizga obuna bo‘ling.\n\n"
+            "1️⃣ <b>Kanalga obuna bo‘lish</b> tugmasini bosing.\n"
+            "2️⃣ Kanalga obuna bo‘ling.\n"
+            "3️⃣ <b>Obunani tekshirish</b> tugmasini bosing.",
             reply_markup=subscription_keyboard(),
             parse_mode="HTML"
         )
+
         return
 
     await message.answer(
@@ -87,6 +104,9 @@ async def start_handler(message: Message, bot):
     )
 
 
+# ==============================
+# OBUNANI TEKSHIRISH
+# ==============================
 @router.callback_query(F.data == "check_subscription")
 async def check_subscription_callback(
     callback: CallbackQuery,
@@ -99,20 +119,24 @@ async def check_subscription_callback(
     )
 
     if not subscribed:
+
         await callback.answer(
             "❌ Siz hali kanalga obuna bo‘lmagansiz!",
             show_alert=True
         )
+
         return
 
-    await callback.message.delete()
-
-    await callback.message.answer(
+    await callback.message.edit_text(
         "✅ <b>Obuna tasdiqlandi!</b>\n\n"
         "🎬 DONIMEDIA'ga xush kelibsiz!\n"
         "🍿 Kino izlashni boshlang.",
-        reply_markup=main_menu(),
         parse_mode="HTML"
+    )
+
+    await callback.message.answer(
+        "📋 Asosiy menyu:",
+        reply_markup=main_menu()
     )
 
     await callback.answer()
