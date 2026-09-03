@@ -20,4 +20,4 @@ if not ADMIN_ID:
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY topilmadi!")
 
-ADMIN_ID = int(ADMIN_ID.strip())
+ADMIN_ID = int(ADMIN_ID)
