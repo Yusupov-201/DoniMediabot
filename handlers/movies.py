@@ -3,7 +3,8 @@ from aiogram.types import (
     Message,
     CallbackQuery,
     InlineKeyboardMarkup,
-    InlineKeyboardButton
+    InlineKeyboardButton,
+    Bot
 )
 
 from database import (
@@ -16,22 +17,22 @@ from database import (
 )
 
 from services.subscription import check_subscription
-from config import CHANNEL_ID
-
 
 router = Router()
 
 
-def subscription_keyboard():
+# =========================================================
+# 🔐 MAJBURIY OBUNA
+# =========================================================
 
-    username = CHANNEL_ID.replace("@", "")
+def subscription_keyboard():
 
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text="📢 Kanalga obuna bo‘lish",
-                    url=f"https://t.me/{username}"
+                    url="https://t.me/buroqli"
                 )
             ],
             [
@@ -44,14 +45,16 @@ def subscription_keyboard():
     )
 
 
-def movie_buttons(movie_id, favorite=False):
+# =========================================================
+# ❤️ KINO TUGMALARI
+# =========================================================
 
-    favorite_text = (
-        "💔 Sevimlidan olib tashlash"
-        if favorite
-        else
-        "❤️ Sevimlilarga qo‘shish"
-    )
+def movie_buttons(movie_id: int, favorite: bool = False):
+
+    if favorite:
+        favorite_text = "💔 Sevimlidan olib tashlash"
+    else:
+        favorite_text = "❤️ Sevimlilarga qo‘shish"
 
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -65,23 +68,19 @@ def movie_buttons(movie_id, favorite=False):
     )
 
 
-@router.message(F.text == "🎬 Kino kodlari")
-async def movie_code_start(message: Message):
-
-    await message.answer(
-        "🎬 <b>Kino kodlari</b>\n\n"
-        "🔢 Kino kodini yuboring.\n\n"
-        "Masalan: <code>125</code>",
-        parse_mode="HTML"
-    )
-
+# =========================================================
+# 🎬 KINO KODI
+# =========================================================
 
 @router.message(F.text.regexp(r"^\d+$"))
-async def movie_code_handler(message: Message, bot):
+async def movie_code_handler(
+    message: Message,
+    bot: Bot
+):
 
     code = message.text.strip()
 
-    # 🔐 Majburiy obuna
+    # 🔐 OBUNA TEKSHIRISH
     subscribed = await check_subscription(
         bot,
         message.from_user.id
@@ -90,72 +89,97 @@ async def movie_code_handler(message: Message, bot):
     if not subscribed:
 
         await message.answer(
-            "🔐 <b>DONIMEDIA</b>\n\n"
-            "Kino olishdan oldin kanalimizga "
-            "obuna bo‘ling.",
+            "🔒 <b>DONIMEDIA</b>\n\n"
+            "Kino olishdan oldin kanalimizga obuna bo‘ling.",
             reply_markup=subscription_keyboard(),
             parse_mode="HTML"
         )
 
         return
 
-    # 🔎 Kod bo‘yicha kino
+    # 🔎 KINO QIDIRISH
     movie = await get_movie(code)
 
     if not movie:
 
         await message.answer(
             "❌ <b>Kino topilmadi!</b>\n\n"
-            "🔢 Kodni tekshirib qayta yuboring.",
+            f"🔢 Siz yuborgan kod: <code>{code}</code>\n\n"
+            "Kod to‘g‘ri ekanligini tekshirib qayta yuboring.",
             parse_mode="HTML"
         )
 
         return
 
-    # 👀 Ko‘rish
+    # 👁 KO‘RISHNI OSHIRISH
     await increase_views(movie["id"])
 
-    # 🕐 Tarix
+    # 🕐 TARIXGA QO‘SHISH
     await add_history(
         message.from_user.id,
         movie["id"]
     )
 
+    # ❤️ SEVIMLI HOLATI
     favorite = await is_favorite(
         message.from_user.id,
         movie["id"]
     )
 
+    # 📝 TAVSIF
     caption = (
         f"🎬 <b>{movie['title']}</b>\n\n"
-        f"📝 {movie['description'] or 'Tavsif mavjud emas'}\n\n"
-        f"🎭 Janr: {movie['genre'] or 'Nomaʼlum'}\n"
-        f"📅 Yil: {movie['year'] or 'Nomaʼlum'}\n"
-        f"⭐ Reyting: {movie['rating']}\n"
-        f"👀 Ko‘rishlar: {movie['views'] + 1}\n\n"
+        f"📖 {movie['description'] or 'Tavsif mavjud emas'}\n\n"
+        f"🎭 Janr: {movie['genre'] or 'Noma’lum'}\n"
+        f"📅 Yil: {movie['year'] or 'Noma’lum'}\n"
+        f"⭐ Reyting: {movie['rating'] or 'Noma’lum'}\n"
         f"🔢 Kod: <code>{movie['code']}</code>\n\n"
         f"🍿 <b>DONIMEDIA</b>"
     )
 
-    await message.answer_video(
-        video=movie["file_id"],
-        caption=caption,
-        reply_markup=movie_buttons(
-            movie["id"],
-            favorite
-        ),
-        parse_mode="HTML"
-    )
+    # 🎥 VIDEONI YUBORISH
+    try:
 
+        await message.answer_video(
+            video=movie["file_id"],
+            caption=caption,
+            reply_markup=movie_buttons(
+                movie["id"],
+                favorite
+            ),
+            parse_mode="HTML"
+        )
+
+    except Exception as e:
+
+        print(f"❌ VIDEO YUBORISH XATOSI: {e}")
+
+        await message.answer(
+            "❌ Kino videosini yuborishda xatolik yuz berdi."
+        )
+
+
+# =========================================================
+# ❤️ SEVIMLIGA QO‘SHISH / OLIB TASHLASH
+# =========================================================
 
 @router.callback_query(F.data.startswith("favorite:"))
 async def favorite_handler(
     callback: CallbackQuery
 ):
 
-    movie_id = int(
-        callback.data.split(":")[1]
-    )
+    try:
+        movie_id = int(
+            callback.data.split(":")[1]
+        )
+    except (ValueError, IndexError):
+
+        await callback.answer(
+            "❌ Kino ID noto‘g‘ri.",
+            show_alert=True
+        )
+
+        return
 
     user_id = callback.from_user.id
 
@@ -172,7 +196,7 @@ async def favorite_handler(
         )
 
         await callback.answer(
-            "💔 Sevimlilardan olib tashlandi"
+            "💔 Sevimlilardan olib tashlandi."
         )
 
         await callback.message.edit_reply_markup(
