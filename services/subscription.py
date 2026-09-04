@@ -1,5 +1,4 @@
 from aiogram import Bot
-
 from config import CHANNEL_ID_1, CHANNEL_ID_2
 
 
@@ -7,13 +6,13 @@ CHANNELS = [
     {
         "id": CHANNEL_ID_1,
         "name": "@buroqli",
-        "url": "https://t.me/buroqli"
+        "url": "https://t.me/buroqli",
     },
     {
         "id": CHANNEL_ID_2,
         "name": "@storis_moskva",
-        "url": "https://t.me/storis_moskva"
-    }
+        "url": "https://t.me/storis_moskva",
+    },
 ]
 
 
@@ -44,7 +43,7 @@ async def check_one_channel(
         return member.status in {
             "member",
             "administrator",
-            "creator"
+            "creator",
         }
 
     except Exception as e:
@@ -53,7 +52,6 @@ async def check_one_channel(
             f"channel={channel_id} | "
             f"{type(e).__name__}: {e}"
         )
-
         return False
 
 
@@ -64,13 +62,13 @@ async def check_subscription(
 
     for channel in CHANNELS:
 
-        result = await check_one_channel(
+        subscribed = await check_one_channel(
             bot,
             user_id,
             channel["id"]
         )
 
-        if not result:
+        if not subscribed:
             return False
 
     return True
@@ -85,13 +83,13 @@ async def get_unsubscribed_channels(
 
     for channel in CHANNELS:
 
-        result = await check_one_channel(
+        subscribed = await check_one_channel(
             bot,
             user_id,
             channel["id"]
         )
 
-        if not result:
+        if not subscribed:
             unsubscribed.append(channel)
 
     return unsubscribed
