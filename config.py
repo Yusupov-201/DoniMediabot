@@ -21,3 +21,4 @@ if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY topilmadi!")
 
 ADMIN_ID = int(ADMIN_ID)
+CHANNEL_ID = CHANNEL_ID.strip()
