@@ -1,4 +1,4 @@
-from aiogram import Router, F
+from aiogram import Router, F, Bot
 from aiogram.filters import CommandStart
 from aiogram.types import (
     Message,
@@ -11,14 +11,14 @@ from config import CHANNEL_ID
 from database import add_user
 from keyboards.main import main_menu
 
-
 router = Router()
 
 
-# ==============================
+# ==========================================
 # MAJBURIY OBUNA TEKSHIRISH
-# ==============================
-async def check_subscription(bot, user_id: int) -> bool:
+# ==========================================
+
+async def check_subscription(bot: Bot, user_id: int) -> bool:
     try:
         member = await bot.get_chat_member(
             chat_id=CHANNEL_ID,
@@ -26,7 +26,7 @@ async def check_subscription(bot, user_id: int) -> bool:
         )
 
         print(
-            f"🔎 OBUNA: user={user_id} | "
+            f"OBUNA: user={user_id} | "
             f"channel={CHANNEL_ID} | "
             f"status={member.status}"
         )
@@ -38,13 +38,14 @@ async def check_subscription(bot, user_id: int) -> bool:
         )
 
     except Exception as e:
-        print(f"❌ Obuna tekshirish xatosi: {e}")
+        print(f"OBUNA TEKSHIRISH XATOSI: {e}")
         return False
 
 
-# ==============================
+# ==========================================
 # OBUNA TUGMALARI
-# ==============================
+# ==========================================
+
 def subscription_keyboard():
 
     return InlineKeyboardMarkup(
@@ -65,11 +66,12 @@ def subscription_keyboard():
     )
 
 
-# ==============================
+# ==========================================
 # /START
-# ==============================
+# ==========================================
+
 @router.message(CommandStart())
-async def start_handler(message: Message, bot):
+async def start_handler(message: Message, bot: Bot):
 
     await add_user(message.from_user)
 
@@ -79,38 +81,36 @@ async def start_handler(message: Message, bot):
     )
 
     if not subscribed:
-
         await message.answer(
             "🎬 <b>DONIMEDIA</b>\n\n"
-            "🍿 Kino olamiga xush kelibsiz!\n\n"
-            "🔐 Botdan foydalanish uchun avval "
+            "👋 Kino botimizga xush kelibsiz!\n\n"
+            "🔒 Botdan foydalanish uchun avval "
             "kanalimizga obuna bo‘ling.\n\n"
-            "1️⃣ <b>Kanalga obuna bo‘lish</b> tugmasini bosing.\n"
-            "2️⃣ Kanalga obuna bo‘ling.\n"
-            "3️⃣ <b>Obunani tekshirish</b> tugmasini bosing.",
+            "Obuna bo‘lgandan keyin "
+            "<b>✅ Obunani tekshirish</b> tugmasini bosing.",
             reply_markup=subscription_keyboard(),
             parse_mode="HTML"
         )
-
         return
 
     await message.answer(
         f"🎬 <b>DONIMEDIA</b>\n\n"
         f"Assalomu alaykum, "
         f"<b>{message.from_user.first_name}</b>! 👋\n\n"
-        f"🍿 Kino izlashni boshlashingiz mumkin.",
+        "🍿 Kino izlashni boshlashingiz mumkin.",
         reply_markup=main_menu(),
         parse_mode="HTML"
     )
 
 
-# ==============================
-# OBUNANI TEKSHIRISH
-# ==============================
+# ==========================================
+# OBUNANI QAYTA TEKSHIRISH
+# ==========================================
+
 @router.callback_query(F.data == "check_subscription")
 async def check_subscription_callback(
     callback: CallbackQuery,
-    bot
+    bot: Bot
 ):
 
     subscribed = await check_subscription(
@@ -130,12 +130,13 @@ async def check_subscription_callback(
     await callback.message.edit_text(
         "✅ <b>Obuna tasdiqlandi!</b>\n\n"
         "🎬 DONIMEDIA'ga xush kelibsiz!\n"
-        "🍿 Kino izlashni boshlang.",
+        "🍿 Kino izlashni boshlashingiz mumkin.",
+        reply_markup=None,
         parse_mode="HTML"
     )
 
     await callback.message.answer(
-        "📋 Asosiy menyu:",
+        "🏠 Bosh menyu",
         reply_markup=main_menu()
     )
 
