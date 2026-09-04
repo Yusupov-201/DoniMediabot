@@ -1,38 +1,45 @@
-from aiogram import Router, F
+from aiogram import Router, F, Bot
+
 from aiogram.types import (
     Message,
     CallbackQuery,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
-    Bot,
 )
 
 from database import (
     get_movie,
-    get_movie_by_id,
     increase_views,
     add_history,
     add_favorite,
     remove_favorite,
     is_favorite,
 )
+
 from services.subscription import check_subscription
 
 
 router = Router()
 
 
-# ============================================================
-# 📢 OBUNA KLAVIATURASI
-# ============================================================
+# =========================================================
+# MAJBURIY OBUNA TUGMALARI
+# =========================================================
 
 def subscription_keyboard():
+
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="📢 @buroqli kanaliga obuna bo‘lish",
+                    text="📢 1️⃣ @buroqli",
                     url="https://t.me/buroqli"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="📢 2️⃣ @storis_moskva",
+                    url="https://t.me/storis_moskva"
                 )
             ],
             [
@@ -45,14 +52,15 @@ def subscription_keyboard():
     )
 
 
-# ============================================================
-# 🎬 KINO TUGMALARI
-# ============================================================
+# =========================================================
+# KINO TUGMALARI
+# =========================================================
 
 def movie_buttons(
     movie_id: int,
     favorite: bool = False
 ):
+
     if favorite:
         favorite_text = "💔 Sevimlidan olib tashlash"
     else:
@@ -76,21 +84,22 @@ def movie_buttons(
     )
 
 
-# ============================================================
-# 🎬 KINO KODI
-# Faqat raqamli xabarlarni ushlaydi!
-# ============================================================
+# =========================================================
+# KINO KODI
+# FAQAT RAQAMLI XABARLARNI USHLAYDI
+# =========================================================
 
 @router.message(F.text.regexp(r"^\d+$"))
 async def movie_code_handler(
     message: Message,
     bot: Bot
 ):
+
     code = message.text.strip()
 
-    # --------------------------------------------------------
-    # 🔐 OBUNANI TEKSHIRISH
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # MAJBURIY OBUNA
+    # -----------------------------------------------------
 
     subscribed = await check_subscription(
         bot,
@@ -98,119 +107,169 @@ async def movie_code_handler(
     )
 
     if not subscribed:
+
         await message.answer(
-            "🔒 <b>DONIMEDIA</b>\n\n"
-            "🎬 Kino olishdan oldin "
-            "<b>@buroqli</b> kanalimizga obuna bo‘ling.\n\n"
-            "1️⃣ Kanalga obuna bo‘ling\n"
-            "2️⃣ Keyin <b>Obunani tekshirish</b> tugmasini bosing.",
+            "🔐 <b>DONIMEDIA</b>\n\n"
+            "🎬 Kino olish uchun avval "
+            "quyidagi 2 ta kanalga obuna bo‘ling:\n\n"
+            "📢 @buroqli\n"
+            "📢 @storis_moskva\n\n"
+            "Obuna bo‘lgach, "
+            "<b>✅ Obunani tekshirish</b> tugmasini bosing.",
             reply_markup=subscription_keyboard(),
             parse_mode="HTML"
         )
+
         return
 
-    # --------------------------------------------------------
-    # 🔎 KINONI BAZADAN TOPISH
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # KINONI TOPISH
+    # -----------------------------------------------------
 
     try:
+
         movie = await get_movie(code)
+
     except Exception as e:
+
         print(
-            f"❌ KINO BAZADAN QIDIRISH XATOSI: {e}"
+            f"❌ KINO QIDIRISH XATOSI: {e}"
         )
 
         await message.answer(
-            "❌ Kino ma'lumotlarini olishda xatolik yuz berdi."
+            "❌ Kino ma'lumotlarini olishda "
+            "xatolik yuz berdi."
         )
+
         return
 
-    # --------------------------------------------------------
-    # ❌ KINO TOPILMADI
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # KINO TOPILMADI
+    # -----------------------------------------------------
 
     if not movie:
+
         await message.answer(
             "❌ <b>Kino topilmadi!</b>\n\n"
             f"🔢 Kino kodi: <code>{code}</code>\n\n"
-            "Kino kodi noto‘g‘ri yoki bu koddagi kino "
-            "hali bazaga qo‘shilmagan.",
+            "Kino kodi noto‘g‘ri yoki "
+            "bu koddagi kino hali bazaga qo‘shilmagan.",
             parse_mode="HTML"
         )
+
         return
 
-    # --------------------------------------------------------
-    # 👁 KO‘RISH + TARIX
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # VIEWS
+    # -----------------------------------------------------
 
     try:
-        await increase_views(movie["id"])
-    except Exception as e:
-        print(
-            f"⚠️ Views xatosi: {e}"
+
+        await increase_views(
+            movie["id"]
         )
 
+    except Exception as e:
+
+        print(
+            f"⚠️ VIEWS XATOSI: {e}"
+        )
+
+    # -----------------------------------------------------
+    # HISTORY
+    # -----------------------------------------------------
+
     try:
+
         await add_history(
             message.from_user.id,
             movie["id"]
         )
+
     except Exception as e:
+
         print(
-            f"⚠️ History xatosi: {e}"
+            f"⚠️ HISTORY XATOSI: {e}"
         )
 
-    # --------------------------------------------------------
-    # ❤️ SEVIMLILIK
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # FAVORITE STATUS
+    # -----------------------------------------------------
 
     try:
+
         favorite = await is_favorite(
             message.from_user.id,
             movie["id"]
         )
+
     except Exception as e:
+
         print(
-            f"⚠️ Favorite tekshirish xatosi: {e}"
+            f"⚠️ FAVORITE TEKSHIRISH XATOSI: {e}"
         )
+
         favorite = False
 
-    # --------------------------------------------------------
-    # 📝 KINO MATNI
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # KINO MA'LUMOTLARI
+    # -----------------------------------------------------
 
     title = movie["title"] or "Noma'lum"
-    description = movie["description"] or "Tavsif mavjud emas"
+
+    description = (
+        movie["description"]
+        or "Tavsif mavjud emas"
+    )
+
     genre = movie["genre"] or "Noma'lum"
+
     year = movie["year"] or "Noma'lum"
+
     rating = movie["rating"] or "Noma'lum"
+
     movie_code = movie["code"]
+
+    file_id = movie["file_id"]
+
+    # -----------------------------------------------------
+    # CAPTION
+    # -----------------------------------------------------
 
     caption = (
         f"🎬 <b>{title}</b>\n\n"
+
         f"📖 <b>Tavsif:</b>\n"
         f"{description}\n\n"
+
         f"🎭 <b>Janr:</b> {genre}\n"
         f"📅 <b>Yil:</b> {year}\n"
         f"⭐ <b>Reyting:</b> {rating}\n"
         f"🔢 <b>Kod:</b> <code>{movie_code}</code>\n\n"
+
         f"🍿 <b>DONIMEDIA</b>\n"
         f"📢 @buroqli"
     )
 
-    # --------------------------------------------------------
-    # 🎥 VIDEO YUBORISH
-    # --------------------------------------------------------
-
-    file_id = movie["file_id"]
+    # -----------------------------------------------------
+    # VIDEO FILE
+    # -----------------------------------------------------
 
     if not file_id:
+
         await message.answer(
-            "❌ Bu kinoning video fayli bazada topilmadi."
+            "❌ Bu kinoning video fayli "
+            "bazada topilmadi."
         )
+
         return
 
+    # -----------------------------------------------------
+    # VIDEONI YUBORISH
+    # -----------------------------------------------------
+
     try:
+
         await message.answer_video(
             video=file_id,
             caption=caption,
@@ -222,27 +281,29 @@ async def movie_code_handler(
         )
 
         print(
-            f"✅ KINO YUBORILDI: "
+            f"✅ KINO YUBORILDI | "
             f"code={code} | "
             f"title={title} | "
             f"user={message.from_user.id}"
         )
 
     except Exception as e:
+
         print(
             f"❌ VIDEO YUBORISH XATOSI: {repr(e)}"
         )
 
         await message.answer(
-            "❌ <b>Videoni yuborishda xatolik yuz berdi.</b>\n\n"
+            "❌ <b>Videoni yuborishda "
+            "xatolik yuz berdi.</b>\n\n"
             "Admin video faylini tekshirishi kerak.",
             parse_mode="HTML"
         )
 
 
-# ============================================================
-# ❤️ SEVIMLILARGA QO‘SHISH / OLIB TASHLASH
-# ============================================================
+# =========================================================
+# ❤️ SEVIMLIGA QO‘SHISH / O‘CHIRISH
+# =========================================================
 
 @router.callback_query(
     F.data.startswith("favorite:")
@@ -250,48 +311,67 @@ async def movie_code_handler(
 async def favorite_handler(
     callback: CallbackQuery
 ):
+
     try:
+
         movie_id = int(
             callback.data.split(":")[1]
         )
+
     except (ValueError, IndexError):
+
         await callback.answer(
             "❌ Kino ID noto‘g‘ri.",
             show_alert=True
         )
+
         return
 
     user_id = callback.from_user.id
 
     try:
-        movie = await get_movie_by_id(movie_id)
-    except Exception:
-        movie = None
 
-    try:
         favorite = await is_favorite(
             user_id,
             movie_id
         )
 
+        # -------------------------------------------------
+        # SEVIMLIDA BOR → O‘CHIRISH
+        # -------------------------------------------------
+
         if favorite:
+
             await remove_favorite(
                 user_id,
                 movie_id
             )
 
             await callback.answer(
-                "💔 Sevimlilardan olib tashlandi."
+                "💔 Sevimlilardan olib tashlandi!"
             )
 
-            await callback.message.edit_reply_markup(
-                reply_markup=movie_buttons(
-                    movie_id,
-                    False
+            try:
+
+                await callback.message.edit_reply_markup(
+                    reply_markup=movie_buttons(
+                        movie_id,
+                        False
+                    )
                 )
-            )
+
+            except Exception as e:
+
+                print(
+                    f"⚠️ TUGMA YANGILASH XATOSI: {e}"
+                )
+
+        # -------------------------------------------------
+        # SEVIMLIDA YO‘Q → QO‘SHISH
+        # -------------------------------------------------
 
         else:
+
             await add_favorite(
                 user_id,
                 movie_id
@@ -301,27 +381,37 @@ async def favorite_handler(
                 "❤️ Sevimlilarga qo‘shildi!"
             )
 
-            await callback.message.edit_reply_markup(
-                reply_markup=movie_buttons(
-                    movie_id,
-                    True
+            try:
+
+                await callback.message.edit_reply_markup(
+                    reply_markup=movie_buttons(
+                        movie_id,
+                        True
+                    )
                 )
-            )
+
+            except Exception as e:
+
+                print(
+                    f"⚠️ TUGMA YANGILASH XATOSI: {e}"
+                )
 
     except Exception as e:
+
         print(
             f"❌ FAVORITE XATOSI: {e}"
         )
 
         await callback.answer(
-            "❌ Sevimlilarni o‘zgartirishda xatolik.",
+            "❌ Sevimlilarni o‘zgartirishda "
+            "xatolik yuz berdi.",
             show_alert=True
         )
 
 
-# ============================================================
-# ⬅️ KINO OYNASIDAN BOSH MENYU
-# ============================================================
+# =========================================================
+# ⬅️ BOSH MENYU
+# =========================================================
 
 @router.callback_query(
     F.data == "movie_home"
@@ -329,7 +419,9 @@ async def favorite_handler(
 async def movie_home(
     callback: CallbackQuery
 ):
+
     try:
+
         from keyboards.main import main_menu
 
         await callback.message.answer(
@@ -342,6 +434,7 @@ async def movie_home(
         await callback.answer()
 
     except Exception as e:
+
         print(
             f"❌ BOSH MENU XATOSI: {e}"
         )
