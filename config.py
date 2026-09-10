@@ -7,6 +7,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 CHANNEL_ID_1 = os.getenv("CHANNEL_ID_1")
 CHANNEL_ID_2 = os.getenv("CHANNEL_ID_2")
+CHANNEL_ID_3 = os.getenv("CHANNEL_ID_3")
+CHANNEL_ID_4 = os.getenv("CHANNEL_ID_4")
 
 ADMIN_ID = os.getenv("ADMIN_ID")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -26,8 +28,6 @@ if not CHANNEL_ID_3:
 
 if not CHANNEL_ID_4:
     raise ValueError("CHANNEL_ID_4 topilmadi!")
-
-
 
 if not ADMIN_ID:
     raise ValueError("ADMIN_ID topilmadi!")
