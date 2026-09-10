@@ -1,5 +1,5 @@
 from aiogram import Bot
-from config import CHANNEL_ID_1, CHANNEL_ID_2
+from config import CHANNEL_ID_1, CHANNEL_ID_2, CHANNEL_ID_3, CHANNEL_ID_4
 
 
 CHANNELS = [
@@ -17,7 +17,13 @@ CHANNELS = [
         "id": CHANNEL_ID_3,
         "name": "@nasheedsl",
         "url": "https://t.me/nasheedsl",
+    },
+     {
+        "id": CHANNEL_ID_4,
+        "name": "@kurtlar_vadisi_storis",
+        "url": "https://t.me/kurtlar_vadisi_storis",
     }
+    
 ]
 
 

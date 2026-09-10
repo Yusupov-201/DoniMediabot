@@ -41,8 +41,14 @@ def subscription_keyboard():
 
              [
                 InlineKeyboardButton(
-                    text="📢 2️⃣ @nasheeds1",
+                    text="📢 3️⃣ @nasheeds1",
                     url="https://t.me/nasheeds1"
+                )
+            ],
+             [
+                InlineKeyboardButton(
+                    text="📢 4️⃣ @kurtlar_vadisi_storis",
+                    url="https://t.me/kurtlar_vadisi_storis"
                 )
             ],
 
