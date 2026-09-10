@@ -21,6 +21,14 @@ if not CHANNEL_ID_1:
 if not CHANNEL_ID_2:
     raise ValueError("CHANNEL_ID_2 topilmadi!")
 
+if not CHANNEL_ID_3:
+    raise ValueError("CHANNEL_ID_3 topilmadi!")
+
+if not CHANNEL_ID_4:
+    raise ValueError("CHANNEL_ID_4 topilmadi!")
+
+
+
 if not ADMIN_ID:
     raise ValueError("ADMIN_ID topilmadi!")
 
@@ -32,3 +40,5 @@ ADMIN_ID = int(ADMIN_ID)
 
 CHANNEL_ID_1 = CHANNEL_ID_1.strip()
 CHANNEL_ID_2 = CHANNEL_ID_2.strip()
+CHANNEL_ID_3 = CHANNEL_ID_3.strip()
+CHANNEL_ID_4 = CHANNEL_ID_4.strip()
