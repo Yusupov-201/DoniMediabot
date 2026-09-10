@@ -39,6 +39,13 @@ def subscription_keyboard():
                 )
             ],
 
+             [
+                InlineKeyboardButton(
+                    text="📢 2️⃣ @nasheeds1",
+                    url="https://t.me/nasheeds1"
+                )
+            ],
+
             [
                 InlineKeyboardButton(
                     text="✅ Obunani tekshirish",

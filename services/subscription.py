@@ -13,6 +13,11 @@ CHANNELS = [
         "name": "@storis_moskva",
         "url": "https://t.me/storis_moskva",
     },
+     {
+        "id": CHANNEL_ID_3,
+        "name": "@nasheedsl",
+        "url": "https://t.me/nasheedsl",
+    }
 ]
 
 
